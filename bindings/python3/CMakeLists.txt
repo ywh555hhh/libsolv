@@ -6,19 +6,19 @@
 # we cannot use FIND_PACKAGE PythonLibs here, as this would
 # clash with the python variables.
 #
-IF (NOT DEFINED PYTHON3_EXECUTABLE)
-SET (PYTHON3_EXECUTABLE "/usr/bin/python3")
-ENDIF (NOT DEFINED PYTHON3_EXECUTABLE)
+#IF (NOT DEFINED PYTHON3_EXECUTABLE)
+#SET (PYTHON3_EXECUTABLE "/usr/bin/python3")
+#ENDIF (NOT DEFINED PYTHON3_EXECUTABLE)
 
-EXECUTE_PROCESS(COMMAND ${PYTHON3_EXECUTABLE} -c "from sys import stdout; import sysconfig; stdout.write(sysconfig.get_path('platlib'))" OUTPUT_VARIABLE PYTHON3_INSTALL_DIR)
-EXECUTE_PROCESS(COMMAND ${PYTHON3_EXECUTABLE} -c "from sys import stdout; import sysconfig; stdout.write(sysconfig.get_path('include'))" OUTPUT_VARIABLE PYTHON3_INCLUDE_DIR)
+#EXECUTE_PROCESS(COMMAND ${PYTHON3_EXECUTABLE} -c "from sys import stdout; import sysconfig; stdout.write(sysconfig.get_path('platlib'))" OUTPUT_VARIABLE PYTHON3_INSTALL_DIR)
+#EXECUTE_PROCESS(COMMAND ${PYTHON3_EXECUTABLE} -c "from sys import stdout; import sysconfig; stdout.write(sysconfig.get_path('include'))" OUTPUT_VARIABLE PYTHON3_INCLUDE_DIR)
 
 SET (SWIG_PY3_FLAGS -DPYTHON3=1)
 SET (SWIG_PY3_FLAGS ${SWIG_PY3_FLAGS} -DSWIG_PYTHON_LEGACY_BOOL=1)
 
-MESSAGE (STATUS "Python3 executable: ${PYTHON3_EXECUTABLE}")
-MESSAGE (STATUS "Python3 installation dir: ${PYTHON3_INSTALL_DIR}")
-MESSAGE (STATUS "Python3 include path: ${PYTHON3_INCLUDE_DIR}")
+MESSAGE (STATUS "Python3 executable: ${PYTHON_EXECUTABLE}")
+MESSAGE (STATUS "Python3 installation dir: ${PYTHON_INSTALL_DIR}")
+MESSAGE (STATUS "Python3 include path: ${PYTHON_INCLUDE_DIR}")
 
 ADD_CUSTOM_COMMAND (
     OUTPUT solv_python.c
@@ -28,11 +28,15 @@ ADD_CUSTOM_COMMAND (
 )
 
 ADD_DEFINITIONS(-Wno-unused)
-INCLUDE_DIRECTORIES (${PYTHON3_INCLUDE_DIR})
+INCLUDE_DIRECTORIES (${PYTHON_INCLUDE_DIR})
 
 ADD_LIBRARY (bindings_python3 SHARED solv_python.c)
 SET_TARGET_PROPERTIES (bindings_python3 PROPERTIES PREFIX "" OUTPUT_NAME "_solv")
-TARGET_LINK_LIBRARIES (bindings_python3 libsolvext libsolv ${SYSTEM_LIBRARIES})
+TARGET_LINK_LIBRARIES (bindings_python3 libsolvext_static libsolv_static ${SYSTEM_LIBRARIES})
 
-INSTALL (TARGETS bindings_python3 LIBRARY DESTINATION ${PYTHON3_INSTALL_DIR})
-INSTALL (FILES ${CMAKE_CURRENT_BINARY_DIR}/solv.py DESTINATION ${PYTHON3_INSTALL_DIR})
+INSTALL (FILES __init__.py DESTINATION bindings/python3/)
+INSTALL (TARGETS bindings_python3 LIBRARY DESTINATION bindings/python3/)
+INSTALL (FILES ${CMAKE_CURRENT_BINARY_DIR}/solv.py DESTINATION bindings/python3/)
+
+#INSTALL (TARGETS bindings_python3 LIBRARY DESTINATION ${PYTHON3_INSTALL_DIR})
+#INSTALL (FILES ${CMAKE_CURRENT_BINARY_DIR}/solv.py DESTINATION ${PYTHON3_INSTALL_DIR})
