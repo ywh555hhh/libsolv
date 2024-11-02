@@ -13,12 +13,16 @@
 #EXECUTE_PROCESS(COMMAND ${PYTHON3_EXECUTABLE} -c "from sys import stdout; import sysconfig; stdout.write(sysconfig.get_path('platlib'))" OUTPUT_VARIABLE PYTHON3_INSTALL_DIR)
 #EXECUTE_PROCESS(COMMAND ${PYTHON3_EXECUTABLE} -c "from sys import stdout; import sysconfig; stdout.write(sysconfig.get_path('include'))" OUTPUT_VARIABLE PYTHON3_INCLUDE_DIR)
 
+EXECUTE_PROCESS(COMMAND ${PYTHON_EXECUTABLE} -c "from sys import stdout; import importlib.machinery; stdout.write(importlib.machinery.EXTENSION_SUFFIXES[0])" OUTPUT_VARIABLE PYTHON_EXT_SUFFIX)
+
 SET (SWIG_PY3_FLAGS -DPYTHON3=1)
 SET (SWIG_PY3_FLAGS ${SWIG_PY3_FLAGS} -DSWIG_PYTHON_LEGACY_BOOL=1)
 
 MESSAGE (STATUS "Python3 executable: ${PYTHON_EXECUTABLE}")
 MESSAGE (STATUS "Python3 installation dir: ${PYTHON_INSTALL_DIR}")
 MESSAGE (STATUS "Python3 include path: ${PYTHON_INCLUDE_DIR}")
+MESSAGE (STATUS "Python3 library: ${PYTHON_LIBRARY}")
+MESSAGE (STATUS "Python3 extension suffix: ${PYTHON_EXT_SUFFIX}")
 
 ADD_CUSTOM_COMMAND (
     OUTPUT solv_python.c
@@ -27,15 +31,28 @@ ADD_CUSTOM_COMMAND (
     DEPENDS ${CMAKE_SOURCE_DIR}/bindings/solv.i
 )
 
+IF (NOT MSVC)
 ADD_DEFINITIONS(-Wno-unused)
+ENDIF (NOT MSVC)
+
 INCLUDE_DIRECTORIES (${PYTHON_INCLUDE_DIR})
 
 ADD_LIBRARY (bindings_python3 SHARED solv_python.c)
-SET_TARGET_PROPERTIES (bindings_python3 PROPERTIES PREFIX "" OUTPUT_NAME "_solv")
+SET_TARGET_PROPERTIES (bindings_python3 PROPERTIES PREFIX "" SUFFIX "${PYTHON_EXT_SUFFIX}" OUTPUT_NAME "_solv")
+IF (WIN32)
+TARGET_LINK_LIBRARIES (bindings_python3 libsolvext libsolv ${PYTHON_LIBRARY} ${SYSTEM_LIBRARIES})
+ELSEIF (APPLE)
+TARGET_LINK_LIBRARIES (bindings_python3 libsolvext_static libsolv_static ${PYTHON_LIBRARY} ${SYSTEM_LIBRARIES})
+ELSE ()
 TARGET_LINK_LIBRARIES (bindings_python3 libsolvext_static libsolv_static ${SYSTEM_LIBRARIES})
+ENDIF ()
 
 INSTALL (FILES __init__.py DESTINATION bindings/python3/)
+IF (WIN32)
+INSTALL (TARGETS bindings_python3 RUNTIME DESTINATION bindings/python3/)
+ELSE ()
 INSTALL (TARGETS bindings_python3 LIBRARY DESTINATION bindings/python3/)
+ENDIF (WIN32)
 INSTALL (FILES ${CMAKE_CURRENT_BINARY_DIR}/solv.py DESTINATION bindings/python3/)
 
 #INSTALL (TARGETS bindings_python3 LIBRARY DESTINATION ${PYTHON3_INSTALL_DIR})

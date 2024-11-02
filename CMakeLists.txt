@@ -34,6 +34,7 @@ OPTION (ENABLE_APPDATA "Build with AppStream appdata support?" OFF)
 
 OPTION (MULTI_SEMANTICS "Build with support for multiple distribution types?" OFF)
 
+OPTION (ENABLE_ZLIB_COMPRESSION "Build with zlib compression support?" OFF)
 OPTION (ENABLE_LZMA_COMPRESSION "Build with lzma/xz compression support?" OFF)
 OPTION (ENABLE_BZIP2_COMPRESSION "Build with bzip2 compression support?" OFF)
 OPTION (ENABLE_ZSTD_COMPRESSION "Build with zstd compression support?" OFF)
@@ -60,11 +61,17 @@ SET (CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/modules)
 #INSTALL( FILES ${CMAKE_MODULE_PATH}/FindLibSolv.cmake DESTINATION ${CMAKE_INSTALL_PREFIX}/share/cmake/Modules )
 
 # for shared libraries on windows (DLLs), we just export all symbols for now
-SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+# SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
 INCLUDE (${CMAKE_SOURCE_DIR}/VERSION.cmake)
 
 SET (have_system x)
+
+IF (WIN32)
+SET (DISABLE_SHARED ON)
+ELSE ()
+SET (ENABLE_STATIC ON)
+ENDIF (WIN32)
 
 IF (FEDORA)
 MESSAGE(STATUS "Building for Fedora")
@@ -140,7 +147,7 @@ IF (${have_system} STRGREATER xx)
     MESSAGE (FATAL_ERROR "Can only compile for one system type.")
 ENDIF (${have_system} STRGREATER xx)
 
-SET (ENABLE_ZLIB_COMPRESSION ON)
+# SET (ENABLE_ZLIB_COMPRESSION ON)
 IF (ENABLE_ARCHREPO OR ENABLE_DEBIAN)
 SET (ENABLE_LZMA_COMPRESSION ON)
 ENDIF (ENABLE_ARCHREPO OR ENABLE_DEBIAN)

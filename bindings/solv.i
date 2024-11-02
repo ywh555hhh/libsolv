@@ -969,9 +969,13 @@ SWIG_AsValDepId(void *obj, int *val) {
 #include <stdbool.h>
 #include <stdio.h>
 #include <sys/stat.h>
+#if defined(_MSC_VER)
+#include <windows.h>
+#else
 #include <sys/utsname.h>
-#include <sys/types.h>
 #include <unistd.h>
+#endif
+#include <sys/types.h>
 #include <fcntl.h>
 
 /* argh, swig undefs bool for perl */
@@ -2204,6 +2208,20 @@ returnself(matchsolvable)
     return pool_id2langid($self, id, lang, create);
   }
   void setarch(const char *arch = 0) {
+%#ifdef _MSC_VER
+    SYSTEM_INFO info;
+    GetNativeSystemInfo(&info);
+    switch(info.wProcessorArchitecture) {
+    case PROCESSOR_ARCHITECTURE_INTEL: arch = "x86"; break;
+    case PROCESSOR_ARCHITECTURE_ARM: arch = "armhfp"; break;
+    case PROCESSOR_ARCHITECTURE_IA64: arch = "ia64"; break;
+    case PROCESSOR_ARCHITECTURE_AMD64: arch = "x86_64"; break;
+    case PROCESSOR_ARCHITECTURE_ARM64: arch = "aarch64"; break;
+    default:
+        perror("uname");
+        return;
+    }
+%#else
     struct utsname un;
     if (!arch) {
       if (uname(&un)) {
@@ -2212,6 +2230,7 @@ returnself(matchsolvable)
       }
       arch = un.machine;
     }
+%#endif
     pool_setarch($self, arch);
   }
   Repo *add_repo(const char *name) {

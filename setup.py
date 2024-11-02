@@ -44,9 +44,10 @@ setup(
         '-DCMAKE_BUILD_TYPE:STRING=RelWithDebInfo',
         '-DENABLE_PYTHON3:BOOL=ON',
         '-DENABLE_COMPLEX_DEPS:BOOL=ON',
-        '-DENABLE_RPMMD:BOOL=ON',
-        '-DENABLE_STATIC:BOOL=ON',
-        '-DWITH_LIBXML2:BOOL=ON'
+        '-DWITHOUT_COOKIEOPEN:BOOL=ON',
+        '-DWITH_LIBXML2:BOOL=OFF',
+        '-DMULTI_SEMANTICS:BOOL=ON',
+        '-DENABLE_EXAMPLES:BOOL=OFF',
     ],
     cmake_languages=['C'],
 )
