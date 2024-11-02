@@ -23,8 +23,16 @@ jobs:
           - os: windows-latest
             arch: AMD64
           python:
-          - setup: 3.12
+          - setup: "3.9"
+            cibw: cp39
+          - setup: "3.10"
+            cibw: cp310
+          - setup: "3.11"
+            cibw: cp311
+          - setup: "3.12"
             cibw: cp312
+          - setup: "3.13"
+            cibw: cp313
     runs-on: ubuntu-latest
 
     outputs:
@@ -77,7 +85,7 @@ jobs:
 
     - uses: actions/upload-artifact@v4
       with:
-        name: wheel-${{ matrix.python.cibw }}-${{ matrix.platform.os }}-${{ matrix.platform.arch }}
+        name: wheel-${{ matrix.python.cibw }}-${{ runner.os }}-${{ matrix.platform.arch }}
         path: ./wheelhouse/*.whl
 
   test:
@@ -93,7 +101,7 @@ jobs:
 
     - uses: actions/download-artifact@v4
       with:
-        name: wheel-${{ matrix.python.cibw }}-${{ matrix.platform.os }}-${{ matrix.platform.arch }}
+        name: wheel-${{ matrix.python.cibw }}-${{ runner.os }}-${{ matrix.platform.arch }}
         path: dist
 
     - name: Set up QEMU
@@ -113,3 +121,18 @@ jobs:
 
     - if: ${{ matrix.platform.arch != 'aarch64' }}
       run: python .github/workflows/test.py
+
+  collect:
+    needs:
+    - build
+    - test
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/download-artifact@v4
+      with:
+        pattern: wheel-*
+        merge-multiple: true
+        path: dist
+
+    - run: find dist
