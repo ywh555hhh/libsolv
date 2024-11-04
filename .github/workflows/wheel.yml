@@ -1,6 +1,7 @@
 ---
 name: build wheel file
 
+
 on:
   push:
     branches:
@@ -75,6 +76,7 @@ jobs:
     - name: Build wheels
       run: python -m cibuildwheel --output-dir wheelhouse
       env:
+        CFLAGS: "-g -O0 -fsanitize=address"
         CIBW_ARCHS: "${{ matrix.platform.arch }}"
         CIBW_BUILD: "${{ matrix.python.cibw }}-*"
         CIBW_SKIP: "*-musllinux_*"
@@ -124,7 +126,7 @@ jobs:
           architecture: ${{ matrix.platform.setup }}
 
       - run: |
-          CFLAGS="-g -O0 -fsanitize=address" python .github/workflows/test.py
+          ASAN_OPTIONS=detect_leaks=1 CFLAGS="-g -O0 -fsanitize=address" python .github/workflows/test.py
         if: runner.os != 'Linux'
 
   collect:
