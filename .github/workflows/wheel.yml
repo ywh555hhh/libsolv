@@ -16,6 +16,9 @@ jobs:
       matrix:
         cfg:
         - platform:
+          - os: macos-13
+            arch: x86_64
+            docker: linux/amd64
           - os: ubuntu-latest
             arch: x86_64
             docker: linux/amd64
