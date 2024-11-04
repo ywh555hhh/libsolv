@@ -18,10 +18,19 @@ jobs:
         - platform:
           - os: ubuntu-latest
             arch: x86_64
+            docker: linux/amd64
+          - os: ubuntu-latest
+            arch: i686
+            docker: linux/386
           - os: ubuntu-latest
             arch: aarch64
+            docker: linux/arm64/v8
           - os: windows-latest
             arch: AMD64
+            setup: x64
+          - os: windows-latest
+            arch: x86
+            setup: x86
           python:
           - setup: "3.9"
             cibw: cp39
@@ -110,16 +119,17 @@ jobs:
       with:
         platforms: arm64
 
-    - run: docker run -v "${{ github.workspace }}:/workspace" -w /workspace --platform linux/arm64/v8 "python:${{ matrix.python.setup }}" python3 .github/workflows/test.py
-      if: ${{ matrix.platform.arch == 'aarch64' }}
+    - run: docker run -v "${{ github.workspace }}:/workspace" -w /workspace --platform "${{ matrix.platform.docker }}" "python:${{ matrix.python.setup }}" python3 .github/workflows/test.py
+      if: runner.os == 'Linux'
 
     - name: Set up Python
       uses: actions/setup-python@v5
-      if: ${{ matrix.platform.arch != 'aarch64' }}
+      if: runner.os != 'Linux'
       with:
         python-version: ${{ matrix.python.setup }}
+        architecture: ${{ matrix.platform.setup }}
 
-    - if: ${{ matrix.platform.arch != 'aarch64' }}
+    - if: runner.os != 'Linux'
       run: python .github/workflows/test.py
 
   collect:
