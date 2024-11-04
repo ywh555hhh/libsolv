@@ -22,21 +22,6 @@ jobs:
           - os: macos-13
             arch: x86_64
             docker: linux/amd64
-          - os: ubuntu-latest
-            arch: x86_64
-            docker: linux/amd64
-          - os: ubuntu-latest
-            arch: i686
-            docker: linux/386
-          - os: ubuntu-latest
-            arch: aarch64
-            docker: linux/arm64/v8
-          - os: windows-latest
-            arch: AMD64
-            setup: x64
-          - os: windows-latest
-            arch: x86
-            setup: x86
           python:
           - setup: "3.9"
             cibw: cp39
@@ -105,50 +90,54 @@ jobs:
 
   test:
     needs:
-    - matrix
-    - build
+      - matrix
+      - build
     strategy:
       matrix: ${{ fromJson(needs.matrix.outputs.matrix) }}
     runs-on: ${{ matrix.platform.os }}
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - uses: actions/download-artifact@v4
-      with:
-        name: wheel-${{ matrix.python.cibw }}-${{ runner.os }}-${{ matrix.platform.arch }}
-        path: dist
+      - uses: actions/download-artifact@v4
+        with:
+          name: wheel-${{ matrix.python.cibw }}-${{ runner.os }}-${{ matrix.platform.arch }}
+          path: dist
 
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@v3
-      if: ${{ matrix.platform.arch == 'aarch64' }}
-      with:
-        platforms: arm64
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        if: ${{ matrix.platform.arch == 'aarch64' }}
+        with:
+          platforms: arm64
 
-    - run: docker run -v "${{ github.workspace }}:/workspace" -w /workspace --platform "${{ matrix.platform.docker }}" "python:${{ matrix.python.setup }}" python3 .github/workflows/test.py
-      if: runner.os == 'Linux'
+      - run: |
+          docker run -v "${{ github.workspace }}:/workspace" -w /workspace --platform "${{ matrix.platform.docker }}" \
+          -e CFLAGS="-g -O0 -fsanitize=address" \
+          "python:${{ matrix.python.setup }}" python3 .github/workflows/test.py
+        if: runner.os == 'Linux'
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      if: runner.os != 'Linux'
-      with:
-        python-version: ${{ matrix.python.setup }}
-        architecture: ${{ matrix.platform.setup }}
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        if: runner.os != 'Linux'
+        with:
+          python-version: ${{ matrix.python.setup }}
+          architecture: ${{ matrix.platform.setup }}
 
-    - if: runner.os != 'Linux'
-      run: python .github/workflows/test.py
+      - run: |
+          CFLAGS="-g -O0 -fsanitize=address" python .github/workflows/test.py
+        if: runner.os != 'Linux'
 
   collect:
-    needs:
-    - build
-    - test
-    runs-on: ubuntu-latest
+      needs:
+        - build
+        - test
+      runs-on: ubuntu-latest
 
-    steps:
-    - uses: actions/download-artifact@v4
-      with:
-        pattern: wheel-*
-        merge-multiple: true
-        path: dist
+      steps:
+        - uses: actions/download-artifact@v4
+          with:
+            pattern: wheel-*
+            merge-multiple: true
+            path: dist
 
-    - run: find dist
+        - run: find dist
